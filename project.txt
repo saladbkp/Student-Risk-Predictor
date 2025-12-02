@@ -1,0 +1,25 @@
+Project Aim:
+To design and develop a predictive visual analytics dashboard that identifies students at risk of academic underperformance by comparing current semester performance against historical data, enabling lecturers to provide timely intervention and support.
+
+Objective
+1. The objective of the project is to integrate and preprocess multisource academic data into a single, structured dataset so that it can be analyzed accurately and meaningfully.
+2. To develop a real-time visual performance analysis dashboard that displays key student information, such as academic performance, attendance patterns, and risk indicators to support effective monitoring by academic staff.
+3. To implement predictive machine learning models that identify the key factors influencing student performance and accurately detect students who may require early academic intervention.
+4. To evaluate the usability and effectiveness of both the dashboard and the analytical model to ensure the system is user-friendly, practical, and supportive of informed academic decision-making.
+
+4.4 Data Understanding → you may take it from IR and improve your data understanding
+discussions
+ Data Understanding – perform all data understanding steps for your dataset with any
+preferred tools.
+4.4.1 Variables – explain variables in your dataset
+4.4.2 Observations – explain observations in your dataset
+4.4.3 Histogram – create histograms or any other visualizations to understand further
+your dataset.
+4.4.4 Etc – add any other necessary sections for your ‘data understanding’ phase.
+Note: Perform data understanding and data pre-processing with any preferred tools.
+4.5 Model Building
+ 4.5.1 Model Building with Technique 1
+ 4.5.2 Model Building with Technique 2
+ 4.5.3 Model Building with Technique 3
+ 4.5.4 Model Building with Technique 4
+ Etc – you may perform may experiments to build your models

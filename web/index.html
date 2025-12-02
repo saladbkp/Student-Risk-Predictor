@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Student Risk Predictor</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#f7f7fb; margin:0; }
+    .container { max-width: 980px; margin: 40px auto; background:#fff; padding:24px; border-radius:16px; box-shadow:0 10px 28px rgba(0,0,0,0.10); }
+    h1 { margin:0 0 8px; font-size:32px; }
+    p.sub { margin:0 0 24px; color:#555; }
+    .grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap:28px; row-gap:16px; }
+    .field { display:flex; flex-direction:column; gap:8px; }
+    label { font-weight:600; font-size:13px; color:#333; }
+    input[type="number"], input[type="text"], select { width:100%; padding:10px 12px; border:1px solid #d0d7de; border-radius:8px; font-size:14px; outline:none; background:#fff; }
+    input[type="number"]:focus, input[type="text"]:focus, select:focus { border-color:#4f46e5; box-shadow:0 0 0 3px rgba(79,70,229,0.15); }
+    .actions { display:flex; gap:12px; margin-top:20px; }
+    button { background:#4f46e5; color:#fff; border:none; padding:12px 18px; border-radius:12px; font-weight:600; cursor:pointer; transition:transform .12s ease, box-shadow .2s ease; }
+    button:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(79,70,229,.25); }
+    button.secondary { background:#eef2ff; color:#1f2937; }
+    .result { margin-top:24px; padding:16px; border-radius:10px; background:#f9fafb; border:1px solid #e5e7eb; }
+    .status { font-size:16px; font-weight:700; }
+    .ok { color:#0d9488; }
+    .warn { color:#b91c1c; }
+    .view { display:none; animation: fade .25s ease-in; }
+    .view.active { display:block; }
+    .hero { text-align:center; padding:40px 20px; }
+    .hero h1 { font-size:36px; }
+    .hero p { color:#4b5563; max-width:720px; margin:12px auto 24px; }
+    .center { display:flex; justify-content:center; align-items:center; gap:12px; }
+    .cards { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:16px; margin-top:16px; }
+    .card { padding:16px; border:1px solid #e5e7eb; border-radius:12px; background:#fafafa; cursor:pointer; transition:border-color .12s ease, transform .12s ease; }
+    .card:hover { border-color:#4f46e5; transform:translateY(-2px); }
+    .muted { color:#6b7280; font-size:13px; }
+    .bar { height:8px; background:#eef2ff; border-radius:999px; overflow:hidden; margin:12px 0; }
+    .bar > div { height:100%; width:0%; background:#4f46e5; transition:width .2s ease; }
+    
+    @keyframes fade { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:none } }
+    @keyframes spin { from { transform:rotate(0deg) } to { transform:rotate(360deg) } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="view-home" class="view active">
+      <div class="hero">
+        <h1>Student Risk Predictor</h1>
+        <p class="sub">Design a predictive visual analytics dashboard to identify students at risk of academic underperformance by comparing current performance with historical data, enabling timely intervention.</p>
+        <div class="center"><button id="btn-start">Start</button></div>
+      </div>
+    </div>
+    <div id="view-mode" class="view">
+      <h1>Choose Input Mode</h1>
+      <p class="sub">Select how you want to provide the factors.</p>
+      <div class="cards">
+        <div class="card" id="card-wizard">
+          <div style="font-weight:700">Step-by-step</div>
+          <div class="muted">Fill one factor at a time</div>
+        </div>
+        <div class="card" id="card-all">
+          <div style="font-weight:700">All at once</div>
+          <div class="muted">Fill all factors together</div>
+        </div>
+      </div>
+      <div class="actions" style="margin-top:16px"><button class="secondary" id="btn-back-home">Back</button></div>
+    </div>
+    <form id="risk-form" class="view">
+      <div class="grid">
+        <div class="field"><label>Age</label><input type="number" id="Age" min="5" max="100" step="1" value="16"></div>
+        <div class="field"><label>Grade</label><input type="number" id="Grade" min="1" max="12" step="1" value="10"></div>
+        <div class="field"><label>Gender</label>
+          <select id="Gender">
+            <option>Female</option>
+            <option>Male</option>
+          </select>
+        </div>
+        <div class="field"><label>Race</label>
+          <select id="Race">
+            <option>White</option>
+            <option>Black</option>
+            <option>Hispanic</option>
+            <option>Other</option>
+            <option>Two-or-more</option>
+          </select>
+        </div>
+        <div class="field"><label>Parental Education</label>
+          <select id="ParentalEducation">
+            <option>HS</option>
+            <option>SomeCollege</option>
+            <option>Bachelors+</option>
+          </select>
+        </div>
+        <div class="field"><label>School Type</label>
+          <select id="SchoolType">
+            <option>Public</option>
+            <option>Private</option>
+          </select>
+        </div>
+        <div class="field"><label>Locale</label>
+          <select id="Locale">
+            <option>City</option>
+            <option>Suburban</option>
+            <option>Town</option>
+            <option>Rural</option>
+          </select>
+        </div>
+        <div class="field"><label>Test Score: Math</label><input type="number" id="TestScore_Math" min="0" max="100" step="0.1" value="72"></div>
+        <div class="field"><label>Test Score: Reading</label><input type="number" id="TestScore_Reading" min="0" max="100" step="0.1" value="65"></div>
+        <div class="field"><label>Test Score: Science</label><input type="number" id="TestScore_Science" min="0" max="100" step="0.1" value="70"></div>
+        <div class="field"><label>Attendance Rate</label>
+          <input type="range" id="AttendanceRate" min="0" max="100" step="1" value="88">
+          <small id="AttendanceRateLabel">88%</small>
+        </div>
+        <div class="field"><label>Study Hours (per week)</label>
+          <input type="range" id="StudyHours" min="0" max="40" step="1" value="1">
+          <small id="StudyHoursLabel">1 hours</small>
+        </div>
+        <div class="field"><label>Internet Access</label>
+          <select id="InternetAccess">
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+          </select>
+        </div>
+        <div class="field"><label>Extracurricular</label>
+          <select id="Extracurricular">
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+          </select>
+        </div>
+        <div class="field"><label>Part-Time Job</label>
+          <select id="PartTimeJob">
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+          </select>
+        </div>
+        <div class="field"><label>Parent Support</label>
+          <select id="ParentSupport">
+            <option value="0.0">Very Low</option>
+            <option value="0.25">Low</option>
+            <option value="0.5" selected>Moderate</option>
+            <option value="0.75">High</option>
+            <option value="1.0">Very High</option>
+          </select>
+        </div>
+        <div class="field"><label>Romantic</label>
+          <select id="Romantic">
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+          </select>
+        </div>
+        <div class="field"><label>Free Time</label>
+          <select id="FreeTime">
+            <option value="1">Very Low</option>
+            <option value="2">Low</option>
+            <option value="3" selected>Moderate</option>
+            <option value="4">High</option>
+            <option value="5">Very High</option>
+          </select>
+        </div>
+        <div class="field"><label>Go Out</label>
+          <select id="GoOut">
+            <option value="1">Very Low</option>
+            <option value="2">Low</option>
+            <option value="3">Moderate</option>
+            <option value="4">High</option>
+            <option value="5">Very High</option>
+          </select>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="submit" id="predict-btn">Predict Risk</button>
+        <button type="button" class="secondary" id="reset">Reset</button>
+      </div>
+    </form>
+    <div id="view-wizard" class="view">
+      <h1>Step-by-step</h1>
+      <div class="bar"><div id="wizard-progress"></div></div>
+      <div class="field" id="wizard-field"></div>
+      <div class="actions">
+        <button type="button" class="secondary" id="wizard-back">Back</button>
+        <button type="button" id="wizard-next">Next</button>
+      </div>
+    </div>
+    <div id="view-result" class="view">
+      <h1>Result</h1>
+      <div class="result">
+        <div id="pred"></div>
+        <div id="prob"></div>
+        <div class="status" id="label"></div>
+        
+      </div>
+      <div style="margin-top:16px">
+        <div style="font-weight:700">Suggestions</div>
+        <ul id="tips" class="muted"></ul>
+      </div>
+      <div class="actions" style="margin-top:16px">
+        <button id="btn-try-again" class="secondary">Try Again</button>
+        <button id="btn-fill-again">Fill Factors</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    const views = ['view-home','view-mode','risk-form','view-wizard','view-result'];
+    const show = (id) => { views.forEach(v => { const el = document.getElementById(v); if (!el) return; el.classList.toggle('active', v === id); }); };
+    const form = document.getElementById('risk-form');
+    const predEl = document.getElementById('pred');
+    const probEl = document.getElementById('prob');
+    const labelEl = document.getElementById('label');
+    
+    const attendanceInput = document.getElementById('AttendanceRate');
+    const attendanceLabel = document.getElementById('AttendanceRateLabel');
+    attendanceInput.addEventListener('input', () => { attendanceLabel.textContent = `${attendanceInput.value}%`; });
+    const studyInput = document.getElementById('StudyHours');
+    const studyLabel = document.getElementById('StudyHoursLabel');
+    studyInput.addEventListener('input', () => { studyLabel.textContent = `${studyInput.value} hours`; });
+    document.getElementById('reset').addEventListener('click', () => { form.reset(); attendanceLabel.textContent = `${attendanceInput.value}%`; studyLabel.textContent = `${studyInput.value} hours`; });
+    document.getElementById('btn-start').addEventListener('click', () => show('view-mode'));
+    document.getElementById('btn-back-home').addEventListener('click', () => show('view-home'));
+    document.getElementById('card-all').addEventListener('click', () => show('risk-form'));
+    document.getElementById('card-wizard').addEventListener('click', () => { wizardIndex = 0; wizardValues = {}; renderWizard(); show('view-wizard'); });
+    document.getElementById('btn-try-again').addEventListener('click', () => { show('view-home'); });
+    document.getElementById('btn-fill-again').addEventListener('click', () => { show('risk-form'); });
+    const predictBtn = document.getElementById('predict-btn');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        Age: parseInt(document.getElementById('Age').value),
+        Grade: parseInt(document.getElementById('Grade').value),
+        Gender: document.getElementById('Gender').value,
+        Race: document.getElementById('Race').value,
+        ParentalEducation: document.getElementById('ParentalEducation').value,
+        SchoolType: document.getElementById('SchoolType').value,
+        Locale: document.getElementById('Locale').value,
+        TestScore_Math: parseFloat(document.getElementById('TestScore_Math').value),
+        TestScore_Reading: parseFloat(document.getElementById('TestScore_Reading').value),
+        TestScore_Science: parseFloat(document.getElementById('TestScore_Science').value),
+        AttendanceRate: parseFloat(document.getElementById('AttendanceRate').value)/100,
+        StudyHours: parseFloat(document.getElementById('StudyHours').value),
+        InternetAccess: parseInt(document.getElementById('InternetAccess').value),
+        Extracurricular: parseInt(document.getElementById('Extracurricular').value),
+        PartTimeJob: parseInt(document.getElementById('PartTimeJob').value),
+        ParentSupport: parseFloat(document.getElementById('ParentSupport').value),
+        Romantic: parseInt(document.getElementById('Romantic').value),
+        FreeTime: parseInt(document.getElementById('FreeTime').value),
+        GoOut: parseInt(document.getElementById('GoOut').value)
+      };
+      const res = await fetch('/predict', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+      if (!res.ok) { alert('Prediction failed'); return; }
+      const data = await res.json();
+      predEl.textContent = `Predicted Risk: ${data.predicted_risk}`;
+      probEl.textContent = `Probability: ${data.probability}`;
+      const pct = (data.probability * 100).toFixed(2);
+      const isHigh = data.predicted_risk === 1;
+      labelEl.className = 'status ' + (isHigh ? 'warn' : 'ok');
+      labelEl.textContent = (isHigh ? '⚠️ High Risk' : '✅ Low Risk') + ` (${pct}%)`;
+      
+      const tips = [];
+      if (payload.AttendanceRate < 0.9) tips.push('Increase attendance to ≥ 90%.');
+      if (payload.StudyHours < 7) tips.push('Study ≥ 7 hours per week.');
+      if (payload.ParentSupport < 0.5) tips.push('Seek mentoring and support.');
+      if (payload.GoOut >= 4) tips.push('Balance leisure time.');
+      if (payload.FreeTime >= 4) tips.push('Use free time for revision.');
+      const tipsEl = document.getElementById('tips');
+      tipsEl.innerHTML = tips.map(t => `<li>${t}</li>`).join('');
+      show('view-result');
+    });
+
+    let wizardIndex = 0;
+    let wizardValues = {};
+    const wizardFieldEl = document.getElementById('wizard-field');
+    const wizardProgressEl = document.getElementById('wizard-progress');
+    const wizardFields = [
+      { id:'Age', label:'Age', type:'number', min:5, max:100, step:1, value:16 },
+      { id:'Grade', label:'Grade', type:'number', min:1, max:12, step:1, value:10 },
+      { id:'Gender', label:'Gender', type:'select', options:['Female','Male'] },
+      { id:'Race', label:'Race', type:'select', options:['White','Black','Hispanic','Other','Two-or-more'] },
+      { id:'ParentalEducation', label:'Parental Education', type:'select', options:['HS','SomeCollege','Bachelors+'] },
+      { id:'SchoolType', label:'School Type', type:'select', options:['Public','Private'] },
+      { id:'Locale', label:'Locale', type:'select', options:['City','Suburban','Town','Rural'] },
+      { id:'TestScore_Math', label:'Test Score: Math', type:'number', min:0, max:100, step:0.1, value:72 },
+      { id:'TestScore_Reading', label:'Test Score: Reading', type:'number', min:0, max:100, step:0.1, value:65 },
+      { id:'TestScore_Science', label:'Test Score: Science', type:'number', min:0, max:100, step:0.1, value:70 },
+      { id:'AttendanceRate', label:'Attendance Rate (%)', type:'range', min:0, max:100, step:1, value:88 },
+      { id:'StudyHours', label:'Study Hours (per week)', type:'range', min:0, max:40, step:1, value:1 },
+      { id:'InternetAccess', label:'Internet Access', type:'select', options:[{text:'Yes', value:1},{text:'No', value:0}] },
+      { id:'Extracurricular', label:'Extracurricular', type:'select', options:[{text:'Yes', value:1},{text:'No', value:0}] },
+      { id:'PartTimeJob', label:'Part-Time Job', type:'select', options:[{text:'Yes', value:1},{text:'No', value:0}] },
+      { id:'ParentSupport', label:'Parent Support', type:'select', options:[{text:'Very Low', value:0.0},{text:'Low', value:0.25},{text:'Moderate', value:0.5},{text:'High', value:0.75},{text:'Very High', value:1.0}] },
+      { id:'Romantic', label:'Romantic', type:'select', options:[{text:'Yes', value:1},{text:'No', value:0}] },
+      { id:'FreeTime', label:'Free Time', type:'select', options:[{text:'Very Low', value:1},{text:'Low', value:2},{text:'Moderate', value:3},{text:'High', value:4},{text:'Very High', value:5}] },
+      { id:'GoOut', label:'Go Out', type:'select', options:[{text:'Very Low', value:1},{text:'Low', value:2},{text:'Moderate', value:3},{text:'High', value:4},{text:'Very High', value:5}] },
+    ];
+    const renderWizard = () => {
+      const total = wizardFields.length;
+      const f = wizardFields[wizardIndex];
+      wizardProgressEl.style.width = `${Math.round((wizardIndex)/total*100)}%`;
+      let html = `<label>${f.label}</label>`;
+      if (f.type === 'number') {
+        html += `<input type="number" id="wiz-input" min="${f.min}" max="${f.max}" step="${f.step}" value="${f.value}">`;
+      } else if (f.type === 'range') {
+        html += `<input type="range" id="wiz-input" min="${f.min}" max="${f.max}" step="${f.step}" value="${f.value}">`;
+        html += `<small id="wiz-label">${f.value}${f.id==='AttendanceRate'?'%':' hours'}</small>`;
+      } else if (f.type === 'select') {
+        html += `<select id="wiz-input">${(f.options.map(o => typeof o==='object'?`<option value="${o.value}">${o.text}</option>`:`<option>${o}</option>`)).join('')}</select>`;
+      }
+      wizardFieldEl.innerHTML = html;
+      const inputEl = document.getElementById('wiz-input');
+      inputEl.addEventListener('input', () => {
+        const l = document.getElementById('wiz-label');
+        if (!l) return;
+        const suffix = f.id==='AttendanceRate'?'%':' hours';
+        l.textContent = `${inputEl.value}${suffix}`;
+      });
+    };
+    document.getElementById('wizard-back').addEventListener('click', () => {
+      if (wizardIndex === 0) { show('view-mode'); return; }
+      wizardIndex -= 1; renderWizard();
+    });
+    document.getElementById('wizard-next').addEventListener('click', async () => {
+      const f = wizardFields[wizardIndex];
+      const valRaw = document.getElementById('wiz-input').value;
+      let val = valRaw;
+      if (f.type === 'number') val = parseFloat(valRaw);
+      if (f.type === 'range') val = parseFloat(valRaw);
+      if (f.type === 'select') {
+        if (typeof f.options[0] === 'object') val = parseFloat(valRaw);
+      }
+      wizardValues[f.id] = val;
+      if (wizardIndex < wizardFields.length - 1) { wizardIndex += 1; renderWizard(); return; }
+      const payload = {
+        Age: parseInt(wizardValues.Age),
+        Grade: parseInt(wizardValues.Grade),
+        Gender: typeof wizardValues.Gender === 'string' ? wizardValues.Gender : (wizardValues.Gender===1?'Male':'Female'),
+        Race: typeof wizardValues.Race === 'string' ? wizardValues.Race : 'White',
+        ParentalEducation: typeof wizardValues.ParentalEducation === 'string' ? wizardValues.ParentalEducation : 'HS',
+        SchoolType: typeof wizardValues.SchoolType === 'string' ? wizardValues.SchoolType : 'Public',
+        Locale: typeof wizardValues.Locale === 'string' ? wizardValues.Locale : 'City',
+        TestScore_Math: parseFloat(wizardValues.TestScore_Math),
+        TestScore_Reading: parseFloat(wizardValues.TestScore_Reading),
+        TestScore_Science: parseFloat(wizardValues.TestScore_Science),
+        AttendanceRate: parseFloat(wizardValues.AttendanceRate)/100,
+        StudyHours: parseFloat(wizardValues.StudyHours),
+        InternetAccess: parseInt(wizardValues.InternetAccess),
+        Extracurricular: parseInt(wizardValues.Extracurricular),
+        PartTimeJob: parseInt(wizardValues.PartTimeJob),
+        ParentSupport: parseFloat(wizardValues.ParentSupport),
+        Romantic: parseInt(wizardValues.Romantic),
+        FreeTime: parseInt(wizardValues.FreeTime),
+        GoOut: parseInt(wizardValues.GoOut),
+        
+      };
+      document.getElementById('wizard-next').disabled = true;
+      const res = await fetch('/predict', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+      if (!res.ok) { document.getElementById('wizard-next').disabled = false; alert('Prediction failed'); return; }
+      const data = await res.json();
+      predEl.textContent = `Predicted Risk: ${data.predicted_risk}`;
+      probEl.textContent = `Probability: ${data.probability}`;
+      const pct = (data.probability * 100).toFixed(2);
+      const isHigh = data.predicted_risk === 1;
+      labelEl.className = 'status ' + (isHigh ? 'warn' : 'ok');
+      labelEl.textContent = (isHigh ? '⚠️ High Risk' : '✅ Low Risk') + ` (${pct}%)`;
+      
+      const tips = [];
+      if (payload.AttendanceRate < 0.9) tips.push('Increase attendance to ≥ 90%.');
+      if (payload.StudyHours < 7) tips.push('Study ≥ 7 hours per week.');
+      if (payload.ParentSupport < 0.5) tips.push('Seek mentoring and support.');
+      if (payload.GoOut >= 4) tips.push('Balance leisure time.');
+      if (payload.FreeTime >= 4) tips.push('Use free time for revision.');
+      const tipsEl = document.getElementById('tips');
+      tipsEl.innerHTML = tips.map(t => `<li>${t}</li>`).join('');
+      show('view-result');
+      document.getElementById('wizard-next').disabled = false;
+    });
+    renderWizard();
+  </script>
+  </body>
+</html>
