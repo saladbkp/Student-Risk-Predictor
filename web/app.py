@@ -49,6 +49,10 @@ def prepare_dataframe(payload):
 def index():
     return send_from_directory(os.path.dirname(__file__), "index.html")
 
+@app.route("/test.csv")
+def serve_test_csv():
+    return send_from_directory(os.path.dirname(__file__), "test.csv")
+
 @app.route("/predict", methods=["POST"])
 def predict():
     data = request.get_json(force=True)
