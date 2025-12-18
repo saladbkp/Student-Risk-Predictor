@@ -190,7 +190,7 @@
       </div>
       <div style="margin-top:16px">
         <div style="font-weight:700">Suggestions</div>
-        <ul id="tips" class="muted"></ul>
+        <ul id="tips" style="color:black; font-size:16px;"></ul>
       </div>
       <div class="actions" style="margin-top:16px">
         <button id="btn-try-again" class="secondary">Try Again</button>
@@ -200,7 +200,13 @@
     <div id="view-dataset" class="view">
       <h1>Dataset Graphs</h1>
       <p class="sub">Explore sample dataset statistics and model performance.</p>
-      <div class="actions" style="margin-bottom:16px"><button class="secondary" id="btn-back-home-dataset">Back</button></div>
+      <div class="actions" style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
+        <button class="secondary" id="btn-back-home-dataset">Back</button>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <label for="csvUpload" style="font-weight:600; font-size:14px; color:#333;">Upload Custom CSV:</label>
+          <input type="file" id="csvUpload" accept=".csv" style="font-size:14px;">
+        </div>
+      </div>
       <div class="cards">
         <div class="card" style="grid-column: span 2;">
           <div style="font-weight:700; margin-bottom:8px">Model Performance</div>
@@ -331,7 +337,8 @@
       const res = await fetch('/predict', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
       if (!res.ok) { alert('Prediction failed'); return; }
       const data = await res.json();
-      predEl.textContent = `Predicted Risk: ${data.predicted_risk}`;
+      const riskText = data.predicted_risk === 1 ? "High Risk to Fail Exam (GPA < 2.5)" : "Low Risk to Fail Exam (GPA > 2.5)";
+      predEl.textContent = `Predicted Risk: ${riskText}`;
       probEl.textContent = `Probability: ${data.probability}`;
       const pct = (data.probability * 100).toFixed(2);
       const isHigh = data.predicted_risk === 1;
@@ -437,7 +444,8 @@
       const res = await fetch('/predict', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
       if (!res.ok) { document.getElementById('wizard-next').disabled = false; alert('Prediction failed'); return; }
       const data = await res.json();
-      predEl.textContent = `Predicted Risk: ${data.predicted_risk}`;
+      const riskText = data.predicted_risk === 1 ? "High Risk to Fail Exam (GPA < 2.5)" : "Low Risk to Fail Exam (GPA > 2.5)";
+      predEl.textContent = `Predicted Risk: ${riskText}`;
       probEl.textContent = `Probability: ${data.probability}`;
       const pct = (data.probability * 100).toFixed(2);
       const isHigh = data.predicted_risk === 1;
@@ -456,22 +464,6 @@
       document.getElementById('wizard-next').disabled = false;
     });
     renderWizard();
-
-    const parseCSV = (text) => {
-      const lines = text.trim().split(/\r?\n/);
-      const headers = lines[0].split(',');
-      const rows = [];
-      for (let i = 1; i < lines.length; i++) {
-        if (!lines[i]) continue;
-        const cols = lines[i].split(',');
-        const obj = {};
-        for (let j = 0; j < headers.length; j++) {
-          obj[headers[j]] = cols[j];
-        }
-        rows.push(obj);
-      }
-      return rows;
-    };
 
     const drawBarChart = (canvas, labels, values, color) => {
       const ctx = canvas.getContext('2d');
@@ -502,79 +494,78 @@
       }
     };
 
-    const renderDataset = async () => {
-      const override = window.DATA_OVERRIDE;
-      const mean = (arr) => arr.reduce((a,b)=>a+b,0) / (arr.length || 1);
-      const histCounts = (bins, arr) => {
-        const counts = new Array(bins.length - 1).fill(0);
-        for (const v of arr) {
-          for (let i = 0; i < bins.length - 1; i++) {
-            if (v >= bins[i] && v < bins[i+1]) { counts[i] += 1; break; }
-          }
-        }
-        return counts;
-      };
-      if (override && Array.isArray(override.math)) {
-        const math = (override.math || []).map(Number);
-        const reading = (override.reading || []).map(Number);
-        const science = (override.science || []).map(Number);
-        const attendance = (override.attendance || []).map(Number);
-        if (math.length) document.getElementById('avg-math').textContent = mean(math).toFixed(2);
-        if (reading.length) document.getElementById('avg-reading').textContent = mean(reading).toFixed(2);
-        if (science.length) document.getElementById('avg-science').textContent = mean(science).toFixed(2);
-        if (attendance.length) document.getElementById('avg-attendance').textContent = mean(attendance).toFixed(1) + '%';
-        const binsScore = [50,55,60,65,70,75,80,85,90,95,100];
-        if (math.length) {
-          const counts = histCounts(binsScore, math);
-          const labels = counts.map((_,i)=>`${binsScore[i]}-${binsScore[i+1]}`);
-          drawBarChart(document.getElementById('chart-math'), labels, counts, '#4f46e5');
-        }
-        if (reading.length) {
-          const counts = histCounts(binsScore, reading);
-          const labels = counts.map((_,i)=>`${binsScore[i]}-${binsScore[i+1]}`);
-          drawBarChart(document.getElementById('chart-reading'), labels, counts, '#10b981');
-        }
-        if (science.length) {
-          const counts = histCounts(binsScore, science);
-          const labels = counts.map((_,i)=>`${binsScore[i]}-${binsScore[i+1]}`);
-          drawBarChart(document.getElementById('chart-science'), labels, counts, '#f59e0b');
-        }
-        if (attendance.length) {
-          const binsAtt = [0,10,20,30,40,50,60,70,80,90,100];
-          const counts = histCounts(binsAtt, attendance);
-          const labels = counts.map((_,i)=>`${binsAtt[i]}-${binsAtt[i+1]}`);
-          drawBarChart(document.getElementById('chart-attendance'), labels, counts, '#6366f1');
-        }
+    const renderFromStats = (stats) => {
+      console.log('Avg Math');
+      console.log(stats.avg_math.toFixed(2));
+      console.log('Avg Reading');
+      console.log(stats.avg_reading.toFixed(2));
+      console.log('Avg Science');
+      console.log(stats.avg_science.toFixed(2));
+      console.log('Avg Attendance');
+      console.log(stats.avg_attendance.toFixed(1) + '%');
+      console.log('Math Score Distribution');
+      console.log('Reading Score Distribution');
+      console.log('Science Score Distribution');
+      console.log('Attendance Distribution');
+
+      document.getElementById('avg-math').textContent = stats.avg_math.toFixed(2);
+      document.getElementById('avg-reading').textContent = stats.avg_reading.toFixed(2);
+      document.getElementById('avg-science').textContent = stats.avg_science.toFixed(2);
+      document.getElementById('avg-attendance').textContent = stats.avg_attendance.toFixed(1) + '%';
+      
+      drawBarChart(document.getElementById('chart-math'), stats.hist_math.labels, stats.hist_math.counts, '#4f46e5');
+      drawBarChart(document.getElementById('chart-reading'), stats.hist_reading.labels, stats.hist_reading.counts, '#10b981');
+      drawBarChart(document.getElementById('chart-science'), stats.hist_science.labels, stats.hist_science.counts, '#f59e0b');
+      drawBarChart(document.getElementById('chart-attendance'), stats.hist_attendance.labels, stats.hist_attendance.counts, '#6366f1');
+    };
+
+    const renderDataset = async (customStats = null) => {
+      if (customStats) {
+        renderFromStats(customStats);
         return;
       }
-      const res = await fetch('test.csv');
-      if (!res.ok) return;
-      const text = await res.text();
-      const rows = parseCSV(text);
-      const get = (k) => rows.map(r => parseFloat(r[k]));
-      const avgMath = mean(get('TestScore_Math'));
-      const avgReading = mean(get('TestScore_Reading'));
-      const avgScience = mean(get('TestScore_Science'));
-      const avgAttendance = mean(get('AttendanceRate')) * 100;
-      document.getElementById('avg-math').textContent = avgMath.toFixed(2);
-      document.getElementById('avg-reading').textContent = avgReading.toFixed(2);
-      document.getElementById('avg-science').textContent = avgScience.toFixed(2);
-      document.getElementById('avg-attendance').textContent = avgAttendance.toFixed(1) + '%';
-      const binsScore = [50,55,60,65,70,75,80,85,90,95,100];
-      const math = get('TestScore_Math');
-      const countsM = histCounts(binsScore, math);
-      drawBarChart(document.getElementById('chart-math'), countsM.map((_,i)=>`${binsScore[i]}-${binsScore[i+1]}`), countsM, '#4f46e5');
-      const reading = get('TestScore_Reading');
-      const countsR = histCounts(binsScore, reading);
-      drawBarChart(document.getElementById('chart-reading'), countsR.map((_,i)=>`${binsScore[i]}-${binsScore[i+1]}`), countsR, '#10b981');
-      const science = get('TestScore_Science');
-      const countsS = histCounts(binsScore, science);
-      drawBarChart(document.getElementById('chart-science'), countsS.map((_,i)=>`${binsScore[i]}-${binsScore[i+1]}`), countsS, '#f59e0b');
-      const attendanceVals = get('AttendanceRate').map(v => v * 100);
-      const binsAtt = [0,10,20,30,40,50,60,70,80,90,100];
-      const countsA = histCounts(binsAtt, attendanceVals);
-      drawBarChart(document.getElementById('chart-attendance'), countsA.map((_,i)=>`${binsAtt[i]}-${binsAtt[i+1]}`), countsA, '#6366f1');
+      try {
+        const res = await fetch('/dataset_stats');
+        if (!res.ok) return;
+        const stats = await res.json();
+        renderFromStats(stats);
+      } catch (e) {
+        console.error("Failed to load dataset stats", e);
+      }
     };
+
+    document.getElementById('csvUpload').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const res = await fetch('/upload_csv', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (!res.ok) {
+          const err = await res.json();
+          alert('Upload failed: ' + (err.error || 'Unknown error'));
+          return;
+        }
+        else{
+          console.log('Upload successful');
+        }
+
+        const stats = await res.json();
+        renderDataset(stats);
+        const label = document.querySelector('label[for="csvUpload"]');
+        if (label) label.textContent = `Current: ${file.name}`;
+        
+      } catch (err) {
+        console.error(err);
+        alert('Failed to upload/process CSV file.');
+      }
+    });
   </script>
   </body>
 </html>

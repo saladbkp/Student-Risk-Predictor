@@ -3,6 +3,7 @@ import joblib
 import pandas as pd
 import json
 import os
+import numpy as np
 
 app = Flask(__name__, static_folder=".")
 
@@ -45,6 +46,28 @@ def prepare_dataframe(payload):
     encoded = encoded[final_columns]
     return encoded
 
+def calculate_stats(df):
+    stats = {}
+    
+    # Calculate means
+    stats["avg_math"] = float(df["TestScore_Math"].mean())
+    stats["avg_reading"] = float(df["TestScore_Reading"].mean())
+    stats["avg_science"] = float(df["TestScore_Science"].mean())
+    stats["avg_attendance"] = float(df["AttendanceRate"].mean() * 100)
+
+    # Calculate histograms
+    def get_hist(data):
+        counts, edges = np.histogram(data, bins=10)
+        labels = [f"{int(edges[i])}-{int(edges[i+1])}" for i in range(len(edges)-1)]
+        return {"labels": labels, "counts": counts.tolist()}
+
+    stats["hist_math"] = get_hist(df["TestScore_Math"].dropna())
+    stats["hist_reading"] = get_hist(df["TestScore_Reading"].dropna())
+    stats["hist_science"] = get_hist(df["TestScore_Science"].dropna())
+    stats["hist_attendance"] = get_hist(df["AttendanceRate"].dropna() * 100)
+    
+    return stats
+
 @app.route("/")
 def index():
     return send_from_directory(os.path.dirname(__file__), "index.html")
@@ -52,6 +75,34 @@ def index():
 @app.route("/test.csv")
 def serve_test_csv():
     return send_from_directory(os.path.dirname(__file__), "test.csv")
+
+@app.route("/dataset_stats")
+def dataset_stats():
+    try:
+        df = pd.read_csv(os.path.join(os.path.dirname(__file__), "test.csv"))
+        stats = calculate_stats(df)
+        return jsonify(stats)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/upload_csv", methods=["POST"])
+def upload_csv():
+    if "file" not in request.files:
+        return jsonify({"error": "No file part"}), 400
+    file = request.files["file"]
+    if file.filename == "":
+        return jsonify({"error": "No selected file"}), 400
+    try:
+        df = pd.read_csv(file)
+        # Validate columns
+        required = ["TestScore_Math", "TestScore_Reading", "TestScore_Science", "AttendanceRate"]
+        if not all(col in df.columns for col in required):
+             return jsonify({"error": "Missing required columns"}), 400
+             
+        stats = calculate_stats(df)
+        return jsonify(stats)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/predict", methods=["POST"])
 def predict():
